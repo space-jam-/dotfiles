@@ -1,135 +1,214 @@
+;; Initialize package sources
 (require 'package)
-(let* ((no-ssl (and (memq system-type '(windows-nt ms-dos))
-	                      (not (gnutls-available-p))))
-       (proto (if no-ssl "http" "https")))
-  (when no-ssl (warn "\
-		     Your version of Emacs does not support SSL connections,
-		     which is unsafe because it allows man-in-the-middle attacks.
-		     There are two things you can do about this warning:
-		     1. Install an Emacs version that does support SSL and be safe.
-		     2. Remove this warning from your init file so you won't see it again."))
-  (add-to-list 'package-archives (cons "melpa" (concat proto "://melpa.org/packages/")) t)
-  ;; Comment/uncomment this line to enable MELPA Stable if desired.  See `package-archive-priorities`
-  ;; and `package-pinned-packages`. Most users will not need or want to do this.
-  ;;(add-to-list 'package-archives (cons "melpa-stable" (concat proto "://stable.melpa.org/packages/")) t)
-  )
 
-(require 'package)
-(add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/") t)
+(setq package-archives '(("melpa" . "https://melpa.org/packages/")
+                         ("melpa-stable" . "https://stable.melpa.org/packages/")
+                         ("org" . "https://orgmode.org/elpa/")
+                         ("elpa" . "https://elpa.gnu.org/packages/")))
 
 (package-initialize)
+;; (unless package-archive-contents
+;;   (package-refresh-contents))
 
-(when (not package-archive-contents)
-    (package-refresh-contents))
 
+;; Bootstrap straight.el
+(defvar bootstrap-version)
+(let ((bootstrap-file
+      (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+      (bootstrap-version 5))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+        "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+        'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
+
+;; Always use straight to install on systems other than Linux
+(setq straight-use-package-by-default (not (eq system-type 'gnu/linux)))
+
+;; Use straight.el for use-package expressions
+(straight-use-package 'use-package)
+
+(setq inhibit-startup-message t)
+(menu-bar-mode -1)
+(scroll-bar-mode -1)        ; Disable visible scrollbar
+(tool-bar-mode -1)          ; Disable the toolbar
+(tooltip-mode -1)           ; Disable tooltips
+
+(setq mouse-wheel-follow-mouse 't) ;; scroll window under mouse
+
+(global-set-key (kbd "<escape>") 'keyboard-escape-quit)
+(defadvice keyboard-escape-quit
+  (around keyboard-escape-quit-dont-close-windows activate)
+  (let ((buffer-quit-function (lambda () ())))
+    ad-do-it))
+
+(customize-set-variable 'tramp-default-method "ssh")
+
+;; use-package, always install missing
 (unless (package-installed-p 'use-package)
+  (package-refresh-contents)
   (package-install 'use-package))
 
 (require 'use-package)
 (setq use-package-always-ensure t)
 
-(add-to-list 'load-path "~/.emacs.d/custom")
+(use-package color-theme-sanityinc-tomorrow
+  :config
+  (color-theme-sanityinc-tomorrow-night))
 
-(require 'setup-general)
-(if (version< emacs-version "24.4")
-    (require 'setup-ivy-counsel)
+(use-package powerline
+  :config
+  (powerline-default-theme))
 
-(require 'setup-cedet)
-(require 'setup-editing)
-(setq c-default-style "linux")
-;; function-args
-;; (require 'function-args)
-;; (fa-config-default)
-;; (define-key c-mode-map  [(tab)] 'company-complete)
-;; (define-key c++-mode-map  [(tab)] 'company-complete)
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   (quote
-    (zygospore yasnippet ws-butler volatile-highlights use-package undo-tree iedit counsel-projectile company clean-aindent-mode anzu))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- ))
+  '(default ((t (:height 100 :family "Hack")))))
 
-(ivy-mode 1)
-(setq ivy-use-virtual-buffers t)
-(setq enable-recursive-minibuffers t)
-;; enable this if you want `swiper' to use it
-;; (setq search-default-mode #'char-fold-to-regexp)
-(global-set-key "\C-s" 'swiper)
-(global-set-key (kbd "C-c C-r") 'ivy-resume)
-(global-set-key (kbd "<f6>") 'ivy-resume)
-(global-set-key (kbd "M-x") 'counsel-M-x)
-(global-set-key (kbd "C-x C-f") 'counsel-find-file)
-(global-set-key (kbd "<f1> f") 'counsel-describe-function)
-(global-set-key (kbd "<f1> v") 'counsel-describe-variable)
-(global-set-key (kbd "<f1> l") 'counsel-find-library)
-(global-set-key (kbd "<f2> i") 'counsel-info-lookup-symbol)
-(global-set-key (kbd "<f2> u") 'counsel-unicode-char)
-(global-set-key (kbd "C-c g") 'counsel-git)
-(global-set-key (kbd "C-c j") 'counsel-git-grep)
-(global-set-key (kbd "C-c k") 'counsel-ag)
-(global-set-key (kbd "C-x l") 'counsel-locate)
-(global-set-key (kbd "C-S-o") 'counsel-rhythmbox)
-(define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
-(add-to-list 'default-frame-alist '(font . "SF Mono-14"))
+(use-package which-key
+    :config
+    (which-key-mode))
 
-;; aggressively highlight trailing whitespace
-(add-hook 'prog-mode-hook (lambda ()
-                            (interactive)
-                            (setq show-trailing-whitespace 1)))
-;; TODO highlight multiple blank lines
-;; tabs have always been, and always will be, 8 wide
-(setq-default tab-width 8)
-;; C/C++ indentation
-(defun c-mode-indent-setup-hook ()
+(use-package lsp-mode
+  :init
+  ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
+  (setq lsp-keymap-prefix "C-c l")
+  :hook (;; replace XXX-mode with concrete major-mode(e. g. python-mode)
+         (c-mode . lsp)
+	 (c++-mode . lsp)
+         ;; if you want which-key integration
+         (lsp-mode . lsp-enable-which-key-integration))
+  :commands lsp)
+
+;; optionally
+(use-package lsp-ui
+  :commands lsp-ui-mode)
+
+;; if you are ivy user
+(use-package lsp-ivy
+  :commands lsp-ivy-workspace-symbol)
+
+;;(use-package lsp-ui
+;;  :hook (lsp-mode . lsp-ui-mode)
+;;  :config
+;;  (setq lsp-ui-sideline-enable t)
+;;  (setq lsp-ui-sideline-show-hover nil)
+;;  (setq lsp-ui-doc-position 'bottom)
+;;  (lsp-ui-doc-show))
+
+(use-package yasnippet
+  :hook (prog-mode . yas-minor-mode)
+  :config
+  (yas-reload-all))
+
+(use-package swiper)
+
+(use-package ivy
+  :diminish
+  :bind (("C-s" . swiper)
+         :map ivy-minibuffer-map
+         ("C-f" . ivy-alt-done)
+         ("C-l" . ivy-alt-done)
+         ("C-j" . ivy-next-line)
+         ("C-k" . ivy-previous-line)
+         :map ivy-switch-buffer-map
+         ("C-k" . ivy-previous-line)
+         ("C-l" . ivy-done)
+         ("C-d" . ivy-switch-buffer-kill)
+         :map ivy-reverse-i-search-map
+         ("C-k" . ivy-previous-line)
+         ("C-d" . ivy-reverse-i-search-kill))
+  :init
+  (ivy-mode 1)
+  :config
+  (setq ivy-use-virtual-buffers t)
+  (setq ivy-wrap t)
+  (setq ivy-count-format "(%d/%d) ")
+  (setq enable-recursive-minibuffers t)
+
+  ;; Use different regex strategies per completion command
+  (push '(completion-at-point . ivy--regex-fuzzy) ivy-re-builders-alist)
+  (push '(swiper . ivy--regex-ignore-order) ivy-re-builders-alist)
+  (push '(counsel-M-x . ivy--regex-ignore-order) ivy-re-builders-alist)
+
+  ;; Set minibuffer height for different commands
+  (setf (alist-get 'counsel-projectile-ag ivy-height-alist) 15)
+  (setf (alist-get 'counsel-projectile-rg ivy-height-alist) 15)
+  (setf (alist-get 'swiper ivy-height-alist) 15)
+  (setf (alist-get 'counsel-switch-buffer ivy-height-alist) 7))
+
+(use-package ivy-hydra
+  :defer t
+  :after hydra)
+
+(use-package ivy-rich
+  :init
+  (ivy-rich-mode 1)
+  :after counsel
+  :config
+  (setq ivy-format-function #'ivy-format-function-line)
+  (setq ivy-rich-display-transformers-list
+        (plist-put ivy-rich-display-transformers-list
+                   'ivy-switch-buffer
+                   '(:columns
+                     ((ivy-rich-candidate (:width 40))
+                      (ivy-rich-switch-buffer-indicators (:width 4 :face error :align right)); return the buffer indicators
+                      (ivy-rich-switch-buffer-major-mode (:width 12 :face warning))          ; return the major mode info
+                      (ivy-rich-switch-buffer-project (:width 15 :face success))             ; return project name using `projectile'
+                      (ivy-rich-switch-buffer-path (:width (lambda (x) (ivy-rich-switch-buffer-shorten-path x (ivy-rich-minibuffer-width 0.3))))))  ; return file path relative to project root or `default-directory' if project is nil
+		     ))))
+
+(use-package counsel
+  :after ivy
+  :bind (("M-x" . counsel-M-x)
+         ("C-x b" . counsel-ibuffer)
+         ("C-x C-f" . counsel-find-file)
+         ("C-M-j" . counsel-switch-buffer)
+         ("C-M-l" . counsel-imenu)
+         :map minibuffer-local-map
+         ("C-r" . 'counsel-minibuffer-history))
+  :custom
+  (counsel-linux-app-format-function #'counsel-linux-app-format-function-name-only)
+  :config
+  (setq ivy-initial-inputs-alist nil)) ;; Don't start searches with ^
+
+(use-package prescient
+  :after counsel
+  :config
+  (prescient-persist-mode 1))
+
+(use-package ivy-prescient
+  :after prescient
+  :config
+  (ivy-prescient-mode 1))
+
+(use-package avy
+  :bind (("C-c j" . avy-goto-char)
+ 	 ("C-c l" . avy-goto-line)))
+
+(use-package ace-window
+  :bind (("M-o" . ace-window)))
+
+
+(setq c-default-style "linux")
+
+(defun c-mode-indent-hook ()
   (c-set-offset 'innamespace 0)
   (c-set-offset 'substatement-open 0)
   (setq c-basic-offset 4)
   (setq indent-tabs-mode nil))
-(add-hook 'c-mode-hook 'c-mode-indent-setup-hook)
-(add-hook 'c++-mode-hook 'c-mode-indent-setup-hook)
 
-(color-theme-sanityinc-tomorrow-night)
+(add-hook 'c-mode-hook 'c-mode-indent-hook)
 
-(require 'powerline)
-(powerline-default-theme)
+;; (use-package flycheck
+;;   :defer t
+;;   :hook (lsp-mode . flycheck-mode))
 
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(default ((t (:height 100 :family "Hack")))))
+;; (with-eval-after-load 'lsp-mode
+;;   (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration))
 
-(autoload
-  'ace-jump-mode-pop-mark
-  "ace-jump-mode"
-  "Ace jump back:-)"
-  t)
-(eval-after-load "ace-jump-mode"
-  '(ace-jump-mode-enable-mark-sync))
-(define-key global-map (kbd "C-x SPC") 'ace-jump-mode-pop-mark)
-(define-key global-map (kbd "C-c SPC") 'ace-jump-mode)
-(global-unset-key (kbd "C-z"))
-
-(unless (package-installed-p 'elpy)
-  (package-install 'elpy))
-
-(elpy-enable)
-
-(unless (package-installed-p 'py-autopep8)
-  (package-install 'py-autopep8))
-(unless (package-installed-p 'blacken)
-  (package-install 'blacken))
-
-;; Enable autopep8
-(require 'py-autopep8)
-(add-hook 'elpy-mode-hook 'py-autopep8-enable-on-save)
-(toggle-scroll-bar -1)
