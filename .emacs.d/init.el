@@ -21,6 +21,7 @@
 ;; Load the helper package for commands like `straight-x-clean-unused-repos'
 (require 'straight-x)
 
+>>>>>>> e1ffaabbe08f6f9486c97d1403af85145a843d1b
 (setq inhibit-startup-message t)
 (menu-bar-mode -1)
 (scroll-bar-mode -1)        ; Disable visible scrollbar
@@ -34,8 +35,6 @@
   (around keyboard-escape-quit-dont-close-windows activate)
   (let ((buffer-quit-function (lambda () ())))
     ad-do-it))
-
-(customize-set-variable 'tramp-default-method "ssh")
 
 ;; https://www.jetbrains.com/lp/mono/
 (set-face-attribute 'default nil
