@@ -55,30 +55,32 @@
   :config
   (lsp-register-client
    (make-lsp-client :new-connection (lsp-tramp-connection "clangd")
-                    :major-modes '(c-mode c++-mode)
-                    :remote? t
-                    :server-id 'clangd-remote))
+     :major-modes '(c-mode c++-mode)
+     :remote? t
+     :server-id 'clangd-remote))
 
   (lsp-register-custom-settings
-   '(("pyls.plugins.pyls_black.enabled" t t)))
+    '(("pyls.plugins.pyls_black.enabled" t t)))
+
   ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
   (setq lsp-keymap-prefix "C-c l")
   :bind ("M-RET" . completion-at-point)
   :hook
   ((c-mode c++-mode) . lsp)
-  (python-mode . lsp))
+  (verilog-mode . lsp))
 
 ;; if you are ivy user
 (use-package lsp-ivy
   :commands lsp-ivy-workspace-symbol)
 
 (use-package lsp-ui
-  :hook (lsp-mode . lsp-ui-mode)
-  :config
-  (setq lsp-ui-sideline-enable t)
-  (setq lsp-ui-sideline-show-hover nil)
-  (setq lsp-ui-doc-position 'bottom)
-  (lsp-ui-doc-show))
+  :after lsp
+    :hook (lsp-mode . lsp-ui-mode)
+    :config
+    (setq lsp-ui-sideline-enable t)
+    (setq lsp-ui-sideline-show-hover nil)
+    (setq lsp-ui-doc-position 'bottom)
+    (lsp-ui-doc-show))
 
 (use-package yasnippet
   :hook (prog-mode . yas-minor-mode)
@@ -174,15 +176,13 @@
 (use-package ace-window
   :bind (("M-o" . ace-window)))
 
-;; (use-package flycheck
-;;    :defer t
-;;    :hook (lsp-mode . flycheck-mode))
-
+(use-package flycheck
+  :defer t
+  :hook (lsp-mode . flycheck-mode))
 
 ;;
 ;; Language-specific
 ;;
-
 
 ;; C
 
@@ -196,15 +196,6 @@
 
 ;; Python
 
-(use-package elpy
-  :ensure t
-  :init
-  (elpy-enable))
-
-(use-package python-black
-  :after python
-  :hook (python-mode . python-black-on-save-mode))
-
 (use-package sphinx-doc
   :ensure t
   :hook (python-mode . sphinx-doc-mode))
@@ -215,6 +206,23 @@
   :config
   (setq lisp-indent-offset 2))
 
+;; YAML
+
+(use-package yaml-mode)
+
+;; Verilog
+(use-package verilog-mode
+  :config
+  (setq indent-tabs-mode nil)
+  (setq verilog-auto-endcomments nil)
+  (setq verilog-auto-indent-on-newline nil)
+  (setq verilog-auto-newline nil)
+  (setq verilog-indent-level 2)
+  (setq verilog-indent-level-behavioral 2)
+  (setq verilog-indent-level-declaration 2)
+  (setq verilog-indent-level-module 0)
+  (setq verilog-minimum-comment-distance 9000))
+
 ;; rice
 
 (use-package all-the-icons
@@ -223,12 +231,22 @@
              (window-system))
     (all-the-icons-install-fonts t)))
 
-(use-package doom-themes
+(use-package monokai-pro-theme
+  :ensure t
   :config
-  (setq doom-themes-enable-bold t
-	doom-themes-enable-italic t)
-  (load-theme 'doom-horizon t))
+  (load-theme 'monokai-pro-spectrum t))
 
 (use-package doom-modeline
   :ensure t
   :init (doom-modeline-mode 1))
+
+(use-package org
+  :config
+  (setq org-startup-with-inline-images t))
+
+(use-package org-download)
+
+(use-package exec-path-from-shell
+  :config
+  (when (memq window-system '(mac ns x))
+    (exec-path-from-shell-initialize)))
