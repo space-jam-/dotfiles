@@ -1,3 +1,4 @@
+(setq-default indent-tabs-mode nil)
 ;; Bootstrap straight.el
 (defvar bootstrap-version)
 (let ((bootstrap-file
@@ -29,11 +30,11 @@
 
 (setq mouse-wheel-follow-mouse 't) ;; scroll window under mouse
 
-(global-set-key (kbd "<escape>") 'keyboard-escape-quit)
-(defadvice keyboard-escape-quit
-  (around keyboard-escape-quit-dont-close-windows activate)
-  (let ((buffer-quit-function (lambda () ())))
-    ad-do-it))
+;;(global-set-key (kbd "<escape>") 'keyboard-escape-quit)
+;;(defadvice keyboard-escape-quit
+;;  (around keyboard-escape-quit-dont-close-windows activate)
+;;  (let ((buffer-quit-function (lambda () ())))
+;;    ad-do-it))
 
 ;; https://www.jetbrains.com/lp/mono/
 (set-face-attribute 'default nil
@@ -180,6 +181,9 @@
   :defer t
   :hook (lsp-mode . flycheck-mode))
 
+(use-package aggressive-indent-mode
+  :hook ((c-mode c++-mode) . aggressive-indent-mode))
+
 ;;
 ;; Language-specific
 ;;
@@ -213,7 +217,9 @@
 ;; Verilog
 (use-package verilog-mode
   :config
+  (setq electric-indent-inhibit t)
   (setq indent-tabs-mode nil)
+  (setq tab-width 2)
   (setq verilog-auto-endcomments nil)
   (setq verilog-auto-indent-on-newline nil)
   (setq verilog-auto-newline nil)
@@ -270,3 +276,24 @@
 
 (use-package company-box
   :hook (company-mode . company-box-mode))
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+  )
+
+(load-file "~/.emacs.d/meow_bindings.el")
+(use-package meow
+  :ensure t
+  :init
+  (meow-global-mode 1)
+  :config
+  (meow-setup)
+  (setq meow-global-mode 1))
