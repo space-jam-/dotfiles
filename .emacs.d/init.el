@@ -181,9 +181,6 @@
   :defer t
   :hook (lsp-mode . flycheck-mode))
 
-(use-package aggressive-indent-mode
-  :hook ((c-mode c++-mode) . aggressive-indent-mode))
-
 ;;
 ;; Language-specific
 ;;
