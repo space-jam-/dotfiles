@@ -266,10 +266,21 @@
   :bind (:map company-active-map
          ("<tab>" . company-complete-selection))
         (:map lsp-mode-map
-         ("<tab>" . company-indent-or-complete-common))
+          ("<tab>" . company-indent-or-complete-common))
+        ("C-c s" . company-yasnippet)
   :custom
   (company-minimum-prefix-length 1)
-  (company-idle-delay 0.0))
+  (company-idle-delay 0.0)
+  :config
+  (setq company-backends `(company-capf
+                            company-company-keywords
+                            company-semantic
+                            company-files
+                            company-etags
+                            company-elisp
+                            company-clang
+                            company-cmake
+                            company-yasnippet)))
 
 (use-package company-box
   :hook (company-mode . company-box-mode))
@@ -294,3 +305,5 @@
   :config
   (meow-setup)
   (setq meow-global-mode 1))
+
+(use-package projectile)
