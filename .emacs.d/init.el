@@ -201,6 +201,12 @@
   :ensure t
   :hook (python-mode . sphinx-doc-mode))
 
+(use-package lsp-pyright
+  :ensure t
+  :hook (python-mode . (lambda ()
+                          (require 'lsp-pyright)
+                          (lsp))))  ; or lsp-deferred
+
 ;; elisp
 
 (use-package elisp-mode :straight nil
@@ -270,21 +276,10 @@
   :bind (:map company-active-map
          ("<tab>" . company-complete-selection))
         (:map lsp-mode-map
-          ("<tab>" . company-indent-or-complete-common))
-        ("C-c s" . company-yasnippet)
+         ("<tab>" . company-indent-or-complete-common))
   :custom
   (company-minimum-prefix-length 1)
-  (company-idle-delay 0.0)
-  :config
-  (setq company-backends `(company-capf
-                            company-company-keywords
-                            company-semantic
-                            company-files
-                            company-etags
-                            company-elisp
-                            company-clang
-                            company-cmake
-                            company-yasnippet)))
+  (company-idle-delay 0.0))
 
 (use-package company-box
   :hook (company-mode . company-box-mode))
@@ -301,6 +296,14 @@
  ;; If there is more than one, they won't work right.
   )
 
+(use-package pascal
+  :config
+  (setq pascal-indent-level 2)
+  (setq pascal-start-keywords  '("begin" "end" "function" "procedure"
+ 				  "repeat" "until" "while" "read" "readln"
+ 				  "reset" "rewrite" "write" "writeln"))
+  (setq pascal-separator-keywords  '("downto" "else" "mod" "div" "then" "try")))
+
 (load-file "~/.emacs.d/meow_bindings.el")
 (use-package meow
   :ensure t
@@ -310,4 +313,4 @@
   (meow-setup)
   (setq meow-global-mode 1))
 
-(use-package projectile)
+(use-package ssh-agency)
