@@ -216,14 +216,18 @@
   :config
   (setq electric-indent-inhibit t)
   (setq indent-tabs-mode nil)
-  (setq tab-width 2)
+  (setq tab-width 4)
   (setq verilog-auto-endcomments nil)
   (setq verilog-auto-indent-on-newline nil)
   (setq verilog-auto-newline nil)
-  (setq verilog-indent-level 2)
-  (setq verilog-indent-level-behavioral 2)
-  (setq verilog-indent-level-declaration 2)
+  (setq verilog-indent-level 4)
+  (setq verilog-indent-level-behavioral 4)
+  (setq verilog-indent-level-declaration 0)
   (setq verilog-indent-level-module 0)
+  (setq verilog-case-indent 4)
+  (setq verilog-cexp-indent 4)
+  (setq verilog-cexp-indent 4)
+  (setq verilog-indent-lists nil)
   (setq verilog-minimum-comment-distance 9000))
 
 ;; rice
