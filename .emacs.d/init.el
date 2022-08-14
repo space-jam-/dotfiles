@@ -184,6 +184,9 @@
   :defer t
   :hook (lsp-mode . flycheck-mode))
 
+(use-package smartparens
+  :hook (prog-mode . smartparens-mode))
+
 ;;
 ;; Language-specific
 ;;
