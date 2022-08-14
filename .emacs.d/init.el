@@ -60,8 +60,11 @@
      :remote? t
      :server-id 'clangd-remote))
 
-  (lsp-register-custom-settings
-    '(("pyls.plugins.pyls_black.enabled" t t)))
+  (lsp-register-client
+   (make-lsp-client :new-connection (lsp-tramp-connection "svlangserver")
+     :major-modes '(verilog-mode)
+     :remote? t
+     :server-id 'svlangserver-remote))
 
   ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
   (setq lsp-keymap-prefix "C-c l")
@@ -234,7 +237,8 @@
   (setq verilog-cexp-indent 4)
   (setq verilog-cexp-indent 4)
   (setq verilog-indent-lists nil)
-  (setq verilog-minimum-comment-distance 9000))
+  (setq verilog-minimum-comment-distance 9000)
+  (modify-syntax-entry ?_ "_" verilog-mode-syntax-table))
 
 ;; rice
 
