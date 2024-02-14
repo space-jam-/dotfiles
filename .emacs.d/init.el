@@ -1,14 +1,24 @@
-(setq-default indent-tabs-mode nil)
+(eval-and-compile
+  (defsubst emacs-path (path)
+    (expand-file-name path user-emacs-directory)))
+
+(setq package-archives '(("elpa" . "https://elpa.gnu.org/packages/")
+                         ("melpa" . "https://melpa.org/packages/")
+                         ("nongnu" . "https://elpa.nongnu.org/nongnu/")))
+
 ;; Bootstrap straight.el
 (defvar bootstrap-version)
 (let ((bootstrap-file
-      (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
-      (bootstrap-version 5))
+       (expand-file-name
+        "straight/repos/straight.el/bootstrap.el"
+        (or (bound-and-true-p straight-base-dir)
+            user-emacs-directory)))
+      (bootstrap-version 7))
   (unless (file-exists-p bootstrap-file)
     (with-current-buffer
         (url-retrieve-synchronously
-        "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
-        'silent 'inhibit-cookies)
+         "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
       (goto-char (point-max))
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
@@ -22,19 +32,38 @@
 ;; Load the helper package for commands like `straight-x-clean-unused-repos'
 (require 'straight-x)
 
-(setq inhibit-startup-message t)
-(menu-bar-mode -1)
-(scroll-bar-mode -1)        ; Disable visible scrollbar
-(tool-bar-mode -1)          ; Disable the toolbar
-(tooltip-mode -1)           ; Disable tooltips
 
-(setq mouse-wheel-follow-mouse 't) ;; scroll window under mouse
+(use-package delight :ensure t)
+(use-package use-package-ensure-system-package :ensure t)
 
-;;(global-set-key (kbd "<escape>") 'keyboard-escape-quit)
-;;(defadvice keyboard-escape-quit
-;;  (around keyboard-escape-quit-dont-close-windows activate)
-;;  (let ((buffer-quit-function (lambda () ())))
-;;    ad-do-it))
+(setq-default
+ ad-redefinition-action 'accept                   ; Silence warnings for redefinition
+ cursor-in-non-selected-windows nil               ; Hide the cursor in inactive windows
+ display-time-default-load-average nil            ; Don't display load average
+ fill-column 80                                   ; Set width for automatic line breaks
+ help-window-select t                             ; Focus new help windows when opened
+ indent-tabs-mode nil                             ; Prefer spaces over tabs
+ inhibit-startup-screen t                         ; Disable start-up screen
+ initial-scratch-message ""                       ; Empty the initial *scratch* buffer
+ kill-ring-max 128                                ; Maximum length of kill ring
+ load-prefer-newer t                              ; Prefer the newest version of a file
+ mark-ring-max 128                                ; Maximum length of mark ring
+ read-process-output-max (* 1024 1024)            ; Increase the amount of data reads from the process
+ scroll-conservatively most-positive-fixnum       ; Always scroll by one line
+ select-enable-clipboard t                        ; Merge system's and Emacs' clipboard
+ tab-width 4                                      ; Set width for tabs
+ use-package-always-ensure t                      ; Avoid the :ensure keyword for each package
+ vc-follow-symlinks t                             ; Always follow the symlinks
+ view-read-only t)                                ; Always open read-only buffers in view-mode
+(column-number-mode 1)                            ; Show the column number
+(fset 'yes-or-no-p 'y-or-n-p)                     ; Replace yes/no prompts with y/n
+(global-hl-line-mode)                             ; Hightlight current line
+(set-default-coding-systems 'utf-8)               ; Default to utf-8 encoding
+(show-paren-mode 1)                               ; Show the parent
+(menu-bar-mode -1)                                ; Hide menu bar
+(scroll-bar-mode -1)                              ; Disable visible scrollbar
+(tool-bar-mode -1)                                ; Disable the toolbar
+(tooltip-mode -1)                                 ; Disable tooltips
 
 ;; https://www.jetbrains.com/lp/mono/
 (set-face-attribute 'default nil
@@ -42,274 +71,10 @@
                     :height 100)
 (set-frame-font "JetBrains Mono" nil t)
 
-(set-face-attribute 'fixed-pitch nil
-  :font "JetBrains Mono"
-  :height 100)
-
-(use-package which-key
-  :config
-  (which-key-mode))
-
-(use-package lsp-mode
-  :ensure t
-  :commands lsp
-  :config
-  (lsp-register-client
-   (make-lsp-client :new-connection (lsp-tramp-connection "clangd")
-     :major-modes '(c-mode c++-mode)
-     :remote? t
-     :server-id 'clangd-remote))
-
-  (lsp-register-client
-   (make-lsp-client :new-connection (lsp-tramp-connection "svlangserver")
-     :major-modes '(verilog-mode)
-     :remote? t
-     :server-id 'svlangserver-remote))
-
-  ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
-  (setq lsp-keymap-prefix "C-c l")
-  :bind ("M-RET" . completion-at-point)
-  :hook
-  ;; ((c-mode c++-mode) . lsp)
-  (verilog-mode . lsp))
-
-;; if you are ivy user
-(use-package lsp-ivy
-  :commands lsp-ivy-workspace-symbol)
-
-(use-package lsp-ui
-  :after lsp
-    :hook (lsp-mode . lsp-ui-mode)
-    :config
-    (setq lsp-ui-sideline-enable t)
-    (setq lsp-ui-sideline-show-hover nil)
-    (setq lsp-ui-doc-position 'bottom)
-    (lsp-ui-doc-show))
-
-(use-package yasnippet
-  :hook (prog-mode . yas-minor-mode)
-  :config
-  (yas-reload-all))
-
-(use-package swiper)
-
-(use-package ivy
-  :diminish
-  :bind (("C-s" . swiper)
-         :map ivy-minibuffer-map
-         ("C-f" . ivy-alt-done)
-         ("C-l" . ivy-alt-done)
-         ("C-j" . ivy-next-line)
-         ("C-k" . ivy-previous-line)
-         :map ivy-switch-buffer-map
-         ("C-k" . ivy-previous-line)
-         ("C-l" . ivy-done)
-         ("C-d" . ivy-switch-buffer-kill)
-         :map ivy-reverse-i-search-map
-         ("C-k" . ivy-previous-line)
-         ("C-d" . ivy-reverse-i-search-kill))
-  :init
-  (ivy-mode 1)
-  :config
-  (setq ivy-use-virtual-buffers t)
-  (setq ivy-wrap t)
-  (setq ivy-count-format "(%d/%d) ")
-  (setq enable-recursive-minibuffers t)
-
-  ;; Use different regex strategies per completion command
-  (push '(completion-at-point . ivy--regex-fuzzy) ivy-re-builders-alist)
-  (push '(swiper . ivy--regex-ignore-order) ivy-re-builders-alist)
-  (push '(counsel-M-x . ivy--regex-ignore-order) ivy-re-builders-alist)
-
-  ;; Set minibuffer height for different commands
-  (setf (alist-get 'counsel-projectile-ag ivy-height-alist) 15)
-  (setf (alist-get 'counsel-projectile-rg ivy-height-alist) 15)
-  (setf (alist-get 'swiper ivy-height-alist) 15)
-  (setf (alist-get 'counsel-switch-buffer ivy-height-alist) 7))
-
-(use-package ivy-hydra
-  :defer t
-  :after hydra)
-
-(use-package ivy-rich
-  :init
-  (ivy-rich-mode 1)
-  :after counsel
-  :config
-  (setq ivy-format-function #'ivy-format-function-line)
-  (setq ivy-rich-display-transformers-list
-        (plist-put ivy-rich-display-transformers-list
-                   'ivy-switch-buffer
-                   '(:columns
-                     ((ivy-rich-candidate (:width 40))
-                      (ivy-rich-switch-buffer-indicators (:width 4 :face error :align right)); return the buffer indicators
-                      (ivy-rich-switch-buffer-major-mode (:width 12 :face warning))          ; return the major mode info
-                      (ivy-rich-switch-buffer-project (:width 15 :face success))             ; return project name using `projectile'
-                      (ivy-rich-switch-buffer-path (:width (lambda (x) (ivy-rich-switch-buffer-shorten-path x (ivy-rich-minibuffer-width 0.3))))))  ; return file path relative to project root or `default-directory' if project is nil
-		     ))))
-
-(use-package counsel
-  :after ivy
-  :bind (("M-x" . counsel-M-x)
-         ("C-x b" . counsel-ibuffer)
-         ("C-x C-f" . counsel-find-file)
-         ("C-M-j" . counsel-switch-buffer)
-         ("C-M-l" . counsel-imenu)
-         :map minibuffer-local-map
-         ("C-r" . 'counsel-minibuffer-history))
-  :custom
-  (counsel-linux-app-format-function #'counsel-linux-app-format-function-name-only)
-  :config
-  (setq ivy-initial-inputs-alist nil)) ;; Don't start searches with ^
-
-(use-package prescient
-  :after counsel
-  :config
-  (prescient-persist-mode 1))
-
-(use-package ivy-prescient
-  :after prescient
-  :config
-  (ivy-prescient-mode 1))
-
-(use-package avy
-  :bind (("C-c j" . avy-goto-char))
-  :config
-  (setq avy-all-windows nil))
-
-(use-package ace-window
-  :bind (("M-o" . ace-window)))
-
-(use-package flycheck
-  :defer t
-  :hook (lsp-mode . flycheck-mode))
-
-(use-package smartparens
-  :hook (prog-mode . smartparens-mode))
-
-;;
-;; Language-specific
-;;
-
-;; C
-
-(use-package cc-mode :straight nil
-  :config
-  (c-set-offset 'innamespace 0)
-  (c-set-offset 'substatement-open 0)
-  (setq c-basic-offset 4)
-  (setq indent-tabs-mode nil)
-  (setq c-default-style "K&R"))
-
-;; Python
-
-(use-package sphinx-doc
-  :ensure t
-  :hook (python-mode . sphinx-doc-mode))
-
-(use-package lsp-pyright
-  :ensure t
-  :hook (python-mode . (lambda ()
-                          (require 'lsp-pyright)
-                          (lsp))))  ; or lsp-deferred
-
-;; elisp
-
-(use-package elisp-mode :straight nil
-  :config
-  (setq lisp-indent-offset 2))
-
-;; YAML
-
-(use-package yaml-mode)
-
-;; Verilog
-(use-package verilog-mode
-  :config
-  (setq electric-indent-inhibit t)
-  (setq indent-tabs-mode nil)
-  (setq tab-width 4)
-  (setq verilog-auto-endcomments nil)
-  (setq verilog-auto-indent-on-newline nil)
-  (setq verilog-auto-newline nil)
-  (setq verilog-indent-level 4)
-  (setq verilog-indent-level-behavioral 4)
-  (setq verilog-indent-level-declaration 0)
-  (setq verilog-indent-level-module 0)
-  (setq verilog-case-indent 4)
-  (setq verilog-cexp-indent 4)
-  (setq verilog-cexp-indent 4)
-  (setq verilog-indent-lists nil)
-  (setq verilog-minimum-comment-distance 9000)
-  (modify-syntax-entry ?_ "_" verilog-mode-syntax-table))
-
-;; rice
-
-(use-package all-the-icons
-  :init
-  (when (and (not (member "all-the-icons" (font-family-list)))
-             (window-system))
-    (all-the-icons-install-fonts t)))
-
 (use-package monokai-pro-theme
   :ensure t
   :config
   (load-theme 'monokai-pro-spectrum t))
-
-(use-package doom-modeline
-  :ensure t
-  :init (doom-modeline-mode 1))
-
-(use-package org
-  :config
-  (setq org-startup-with-inline-images t))
-
-(use-package org-download)
-
-(use-package exec-path-from-shell
-  :config
-  (when (memq window-system '(mac ns x))
-    (exec-path-from-shell-initialize)))
-
-(use-package magit
-  :commands magit-status
-  :bind ("C-c g" . magit-status)
-  :custom
-  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
-
-(use-package company
-  :after lsp-mode
-  :hook (lsp-mode . company-mode)
-  :bind (:map company-active-map
-         ("<tab>" . company-complete-selection))
-        (:map lsp-mode-map
-         ("<tab>" . company-indent-or-complete-common))
-  :custom
-  (company-minimum-prefix-length 1)
-  (company-idle-delay 0.0))
-
-(use-package company-box
-  :hook (company-mode . company-box-mode))
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
-  )
-
-(use-package pascal
-  :config
-  (setq pascal-indent-level 2)
-  (setq pascal-start-keywords  '("begin" "end" "function" "procedure"
- 				  "repeat" "until" "while" "read" "readln"
- 				  "reset" "rewrite" "write" "writeln"))
-  (setq pascal-separator-keywords  '("downto" "else" "mod" "div" "then" "try")))
 
 (load-file "~/.emacs.d/meow_bindings.el")
 (use-package meow
@@ -318,6 +83,424 @@
   (meow-global-mode 1)
   :config
   (meow-setup)
-  (setq meow-global-mode 1))
+  (setq meow-global-mode 1)
+  (setq meow-use-clipboard 1))
 
-(use-package ssh-agency)
+;; LSP
+
+(use-package eglot
+  :commands eglot
+  :custom
+  (eglot-autoshutdown t)
+  :config
+  (setq read-process-output-max (* 1024 1024))
+
+  (add-hook 'eglot-managed-mode-hook
+            #'(lambda ()
+                ;; Show flymake diagnostics first.
+                (setq eldoc-documentation-functions
+                      (cons #'flymake-eldoc-function
+                            (remove #'flymake-eldoc-function
+                                    eldoc-documentation-functions))))))
+
+;; Buffer management
+
+(use-package ibuffer
+  :ensure nil
+  :preface
+  (defvar protected-buffers '("*scratch*" "*Messages*")
+    "Buffer that cannot be killed.")
+
+  (defun my/protected-buffers ()
+    "Protect some buffers from being killed."
+    (dolist (buffer protected-buffers)
+      (with-current-buffer buffer
+        (emacs-lock-mode 'kill))))
+  :bind ("C-x C-b" . ibuffer)
+  :init (my/protected-buffers))
+
+;; Dired
+(use-package dired
+  :straight (:type built-in)
+  :ensure nil
+  :commands (dired dired-jump)
+  :bind (:map dired-mode-map
+              ("h" . dired-up-directory)
+              ("j" . dired-next-line)
+              ("k" . dired-previous-line)
+              ("l" . dired-find-alternate-file))
+  :delight "Dired"
+  :custom
+  (dired-auto-revert-buffer t)
+  (dired-dwim-target t)
+  (dired-hide-details-hide-symlink-targets nil)
+  (dired-listing-switches "-alh --group-directories-first")
+  (dired-ls-F-marks-symlinks nil)
+  (dired-recursive-copies 'always))
+
+;; rice
+(use-package doom-modeline
+  :init (doom-modeline-mode)
+  :custom
+  (doom-modeline-icon (display-graphic-p)))
+
+(use-package nerd-icons)
+
+(use-package nerd-icons-dired
+  :hook
+  (dired-mode . nerd-icons-dired-mode))
+
+(use-package nerd-icons-ibuffer
+  :ensure t
+  :hook (ibuffer-mode . nerd-icons-ibuffer-mode))
+
+(use-package nerd-icons-completion
+  :config
+  (nerd-icons-completion-mode)
+  (add-hook 'marginalia-mode-hook #'nerd-icons-completion-marginalia-setup))
+
+(use-package ace-window
+  :bind (("M-o" . ace-window)))
+
+;; completion spaghetti
+
+(use-package consult
+  ;; Replace bindings. Lazily loaded due by `use-package'.
+  :bind (;; C-c bindings (mode-specific-map)
+         ("C-c M-x" . consult-mode-command)
+         ("C-c h"   . consult-history)
+         ("C-c K"   . consult-kmacro)
+         ("C-c e i" . consult-info)
+         ([remap Info-search] . consult-info)
+
+         ("C-*"     . consult-org-heading)
+         ("C-c e l" . find-library)
+         ("C-c e q" . set-variable)
+         ;; ("C-h e l" . find-library)
+         ("C-c p f" . project-find-file)
+
+         ;; C-x bindings (ctl-x-map)
+         ("C-x M-:" . consult-complex-command)
+         ("C-x b"   . consult-buffer)
+         ("C-x 4 b" . consult-buffer-other-window)
+         ("C-x 5 b" . consult-buffer-other-frame)
+         ("C-x r b" . consult-bookmark)
+         ("C-x p b" . consult-project-buffer)
+         ;; Other custom bindings
+         ("M-y"     . consult-yank-pop)
+         ;; M-g bindings (goto-map)
+         ("M-g e"   . consult-compile-error)
+         ("M-g g"   . consult-goto-line)
+         ("M-g M-g" . consult-goto-line)
+         ("M-g l"   . consult-goto-line)
+         ([remap goto-line] . consult-goto-line)
+         ;; ("M-g o"   . consult-org-heading)
+         ("M-g m"   . consult-mark)
+         ("M-g k"   . consult-global-mark)
+         ("M-g i"   . consult-imenu)
+         ("M-g I"   . consult-imenu-multi)
+         ;; M-s bindings (search-map)
+         ("M-s f"   . consult-find)
+         ("M-s M-g" . consult-grep)
+         ("M-s g"   . consult-ripgrep)
+         ("M-s G"   . consult-git-grep)
+         ("M-s r"   . consult-ripgrep)
+         ("C-s"     . consult-line)
+         ("M-s L"   . consult-line-multi)
+         ("M-s k"   . consult-keep-lines)
+         ("M-s u"   . consult-focus-lines)
+         ;; Isearch integration
+         ("M-s e"   . consult-isearch-history)
+         :map isearch-mode-map
+         ("M-e"     . consult-isearch-history)
+         ("M-s e"   . consult-isearch-history)
+         ("M-s l"   . consult-line)
+         ("M-s L"   . consult-line-multi)
+         ;; Minibuffer history
+         :map minibuffer-local-map
+         ("M-s"     . consult-history)
+         ("M-r"     . consult-history))
+
+  ;; ;; Enable automatic preview at point in the *Completions* buffer. This is
+  ;; ;; relevant when you use the default completion UI.
+  :hook (completion-list-mode . consult-preview-at-point-mode)
+
+  :custom
+  ;; (consult-preview-key "M-i")
+  (consult-narrow-key "<")
+
+  :custom-face
+  (consult-file ((t (:inherit font-lock-string-face))))
+
+  :functions
+  (consult-register-format
+   consult-register-window
+   consult-xref)
+
+  ;; The :init configuration is always executed (Not lazy)
+  :init
+
+  ;; Optionally configure the register formatting. This improves the register
+  ;; preview for `consult-register', `consult-register-load',
+  ;; `consult-register-store' and the Emacs built-ins.
+  (setq register-preview-delay 0.5
+        register-preview-function #'consult-register-format)
+
+  ;; Optionally tweak the register preview window.
+  ;; This adds thin lines, sorting and hides the mode line of the window.
+  ;; (advice-add #'register-preview :override #'consult-register-window)
+
+  ;; Use Consult to select xref locations with preview
+  (setq xref-show-xrefs-function #'consult-xref
+        xref-show-definitions-function #'consult-xref)
+
+  ;; (autoload 'projectile-project-root "projectile")
+  ;; (setq consult-project-function #'(lambda (_) (projectile-project-root)))
+  )
+
+(use-package consult-dir
+  :bind (("M-g d"   . consult-dir)
+         :map minibuffer-local-completion-map
+         ("M-s f" . consult-dir-jump-file)
+         ("M-g d" . consult-dir)))
+
+(use-package corfu
+  :straight (corfu :includes corfu-popupinfo
+                   :files (:defaults "extensions/corfu-popupinfo.el"))
+  :load-path "lisp/corfu"
+  :demand t
+  :bind (("M-/" . completion-at-point)
+         :map corfu-map
+         ("C-n"      . corfu-next)
+         ("C-p"      . corfu-previous)
+         ("<escape>" . corfu-quit)
+         ("<return>" . corfu-insert)
+         ("M-d"      . corfu-info-documentation)
+         ("M-l"      . corfu-info-location)
+         ("M-."      . corfu-move-to-minibuffer))
+  :custom
+  ;; Works with `indent-for-tab-command'. Make sure tab doesn't indent when you
+  ;; want to perform completion
+  (tab-always-indent 'complete)
+  (completion-cycle-threshold nil)      ; Always show candidates in menu
+
+  ;; Only use `corfu' when calling `completion-at-point' or
+  ;; `indent-for-tab-command'
+  (corfu-auto t)
+  (corfu-auto-prefix 2)
+  (corfu-auto-delay 0.25)
+
+  (corfu-min-width 80)
+  (corfu-max-width corfu-min-width)     ; Always have the same width
+  (corfu-count 14)
+  (corfu-scroll-margin 4)
+  (corfu-cycle nil)
+
+  ;; `nil' means to ignore `corfu-separator' behavior, that is, use the older
+  ;; `corfu-quit-at-boundary' = nil behavior. Set this to separator if using
+  ;; `corfu-auto' = `t' workflow (in that case, make sure you also set up
+  ;; `corfu-separator' and a keybind for `corfu-insert-separator', which my
+  ;; configuration already has pre-prepared). Necessary for manual corfu usage with
+  ;; orderless, otherwise first component is ignored, unless `corfu-separator'
+  ;; is inserted.
+  (corfu-quit-at-boundary nil)
+  (corfu-separator ?\s)            ; Use space
+  (corfu-quit-no-match 'separator) ; Don't quit if there is `corfu-separator' inserted
+  (corfu-preview-current 'insert)  ; Preview first candidate. Insert on input if only one
+  (corfu-preselect-first t)        ; Preselect first candidate?
+
+  ;; Other
+  (corfu-echo-documentation nil)        ; Already use corfu-popupinfo
+  :preface
+  (defun corfu-enable-always-in-minibuffer ()
+    "Enable Corfu in the minibuffer if Vertico/Mct are not active."
+    (unless (or (bound-and-true-p mct--active) ; Useful if I ever use MCT
+                (bound-and-true-p vertico--input))
+      (setq-local corfu-auto nil)       ; Ensure auto completion is disabled
+      (corfu-mode 1)))
+
+  (defun corfu-move-to-minibuffer ()
+    (interactive)
+    (let (completion-cycle-threshold completion-cycling)
+      (apply #'consult-completion-in-region completion-in-region--data)))
+  :config
+  (global-corfu-mode)
+
+  ;; Enable Corfu more generally for every minibuffer, as long as no other
+  ;; completion UI is active. If you use Mct or Vertico as your main
+  ;; minibuffer completion UI. From
+  ;; https://github.com/minad/corfu#completing-with-corfu-in-the-minibuffer
+  (add-hook 'minibuffer-setup-hook #'corfu-enable-always-in-minibuffer 1))
+
+(use-package corfu-popupinfo
+  :after corfu
+  :hook (corfu-mode . corfu-popupinfo-mode)
+  :bind (:map corfu-map
+              ("M-n" . corfu-popupinfo-scroll-up)
+              ("M-p" . corfu-popupinfo-scroll-down)
+              ([remap corfu-show-documentation] . corfu-popupinfo-toggle))
+  :custom
+  (corfu-popupinfo-delay 0.5)
+  (corfu-popupinfo-max-width 70)
+  (corfu-popupinfo-max-height 20)
+  ;; Also here to be extra-safe that this is set when `corfu-popupinfo' is
+  ;; loaded. I do not want documentation shown in both the echo area and in
+  ;; the `corfu-popupinfo' popup.
+  (corfu-echo-documentation nil))
+
+(use-package cape
+  :demand t
+  :bind (:prefix-map
+         my-cape-map
+         :prefix "C-c ."
+         ("p" . completion-at-point)
+         ("t" . complete-tag)
+         ("d" . cape-dabbrev)
+         ("h" . cape-history)
+         ("f" . cape-file)
+         ("k" . cape-keyword)
+         ("s" . cape-symbol)
+         ("a" . cape-abbrev)
+         ("l" . cape-line)
+         ("w" . cape-dict)
+         ("\\" . cape-tex)
+         ("_" . cape-tex)
+         ("^" . cape-tex)
+         ("&" . cape-sgml)
+         ("r" . cape-rfc1345))
+  :init
+  ;; Add `completion-at-point-functions', used by `completion-at-point'.
+  (add-to-list 'completion-at-point-functions #'cape-dabbrev)
+  (add-to-list 'completion-at-point-functions #'cape-file)
+  (add-to-list 'completion-at-point-functions #'cape-abbrev))
+
+(use-package marginalia
+  ;; Either bind `marginalia-cycle' globally or only in the minibuffer
+  :bind (("M-A" . marginalia-cycle)
+         :map minibuffer-local-map
+         ("M-A" . marginalia-cycle))
+
+  ;; The :init configuration is always executed (Not lazy!)
+  :config
+  ;; Must be in the :init section of use-package such that the mode gets
+  ;; enabled right away. Note that this forces loading the package.
+  (marginalia-mode))
+
+(use-package orderless
+  :demand t
+  :custom
+  (completion-styles '(orderless basic))
+  (completion-category-overrides
+   '((file (styles basic partial-completion)))))
+
+(use-package vertico
+  :straight (vertico :files (:defaults "extensions/*")
+                     :includes (vertico-repeat
+                                ;; vertico-multiform
+                                vertico-directory
+                                vertico-quick))
+
+  :after cape                           ; because this defines C-c .
+  :demand t
+  :bind (("C-c . ." . vertico-repeat)
+         :map vertico-map
+         ("C-j"   . vertico-exit-input)
+         ("C-M-n" . vertico-next-group)
+         ("C-M-p" . vertico-previous-group))
+  :hook
+  (minibuffer-setup . vertico-repeat-save)
+  (rfn-eshadow-update-overlay . vertico-directory-tidy)
+  :custom
+  (vertico-count 10)
+  (vertico-cycle t)
+  (vertico-resize nil)
+  :preface
+  (defun crm-indicator (args)
+    (cons (format "[CRM%s] %s"
+                  (replace-regexp-in-string
+                   "\\`\\[.*?]\\*\\|\\[.*?]\\*\\'" ""
+                   crm-separator)
+                  (car args))
+          (cdr args)))
+  :config
+  (vertico-mode)
+
+  ;; Add prompt indicator to `completing-read-multiple'.
+  ;; We display [CRM<separator>], e.g., [CRM,] if the separator is a comma.
+  (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
+
+  ;; Do not allow the cursor in the minibuffer prompt
+  (setq minibuffer-prompt-properties
+        '(read-only t cursor-intangible t face minibuffer-prompt))
+
+  (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
+
+  ;; Hide commands in M-x which do not work in the current mode. Vertico
+  ;; commands are hidden in normal buffers.
+  (setq read-extended-command-predicate
+        #'command-completion-default-include-p))
+
+(use-package vertico-repeat
+  :demand t)
+
+(use-package vertico-directory
+  :demand t
+  :bind (:map vertico-map
+              ("<backspace>"   . vertico-directory-delete-char)
+              ("C-w"           . vertico-directory-delete-word)
+              ("C-<backspace>" . vertico-directory-delete-word)
+              ;; ("RET" .           vertico-directory-enter)
+              ))
+
+(use-package vertico-quick
+  :demand t
+  :bind (:map vertico-map
+              ("C-."   . vertico-quick-exit)))
+
+;; Collection of yasnippet snippets
+(use-package yasnippet-snippets
+  :demand t)
+
+(use-package yasnippet
+  :demand t
+  :after yasnippet-snippets
+  :diminish yas-minor-mode
+  :commands yas-minor-mode-on
+  :bind (("C-c y d" . yas-load-directory)
+         ("C-c y i" . yas-insert-snippet)
+         ("C-c y f" . yas-visit-snippet-file)
+         ("C-c y n" . yas-new-snippet)
+         ("C-c y t" . yas-tryout-snippet)
+         ("C-c y l" . yas-describe-tables)
+         ("C-c y g" . yas-global-mode)
+         ("C-c y m" . yas-minor-mode)
+         ("C-c y r" . yas-reload-all)
+         ("C-c y x" . yas-expand)
+         :map yas-keymap
+         ("C-i" . yas-next-field-or-maybe-expand))
+  :mode ("/\\.emacs\\.d/snippets/" . snippet-mode)
+  :hook (prog-mode . yas-minor-mode-on)
+  :custom
+  (yas-prompt-functions '(yas-completing-prompt yas-no-prompt))
+  (yas-snippet-dirs (list (emacs-path "snippets")))
+  (yas-triggers-in-field t)
+  (yas-wrap-around-region t)
+  :custom-face
+  (yas-field-highlight-face ((t (:background "#e4edfc"))))
+  :config
+  (yas-load-directory (emacs-path "snippets")))
+
+(use-package consult-yasnippet
+  :after (consult yasnippet))
+
+(use-package auto-yasnippet
+  :after yasnippet
+  :bind (("C-c y a" . aya-create)
+         ("C-c y e" . aya-expand)
+         ("C-c y o" . aya-open-line)))
+
+(put 'dired-find-alternate-file 'disabled nil)
+
+(use-package nerd-icons-corfu
+  :after corfu
+  :init (add-to-list 'corfu-margin-formatters #'nerd-icons-corfu-formatter))
